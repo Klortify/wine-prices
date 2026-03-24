@@ -31,6 +31,22 @@ class Settings:
         )
 
     # -------------------------
+    # RabbitMQ
+    # -------------------------
+    rabbitmq_host: str = os.getenv("RABBITMQ_HOST", "rabbitmq")
+    rabbitmq_port: int = int(os.getenv("RABBITMQ_PORT", "5672"))
+    rabbitmq_user: str = os.getenv("RABBITMQ_USER", "wineapp")
+    rabbitmq_password: str = os.getenv("RABBITMQ_PASSWORD", "wineapp")
+    rabbitmq_exchange: str = os.getenv("RABBITMQ_EXCHANGE", "agri.events")
+
+    @property
+    def rabbitmq_url(self) -> str:
+        return (
+            f"amqp://{self.rabbitmq_user}:{self.rabbitmq_password}"
+            f"@{self.rabbitmq_host}:{self.rabbitmq_port}/"
+        )
+
+    # -------------------------
     # External API
     # -------------------------
     wine_api_base_url: str = os.getenv(

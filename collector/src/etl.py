@@ -43,10 +43,12 @@ def     upsert_prices(rows: List[Dict]) -> int:
     return inserted
 
 
-def run_etl():
+def run_etl()->int:
     with WineAPIClient() as client:
         rows = client.get_prices()
         print(f"Fetched rows: {len(rows)}")
 
         inserted = upsert_prices(rows)
         print(f"Inserted rows: {inserted}")
+
+        return inserted

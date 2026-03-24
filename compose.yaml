@@ -8,6 +8,20 @@ services:
     env_file:
       - .env
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: wineapp
+      RABBITMQ_DEFAULT_PASS: wineapp
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   wine-collector:
     build:
       context: ./collector
@@ -15,7 +29,10 @@ services:
     env_file:
       - collector/.env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   agri_pgdata:
