@@ -8,6 +8,18 @@ services:
     env_file:
       - .env
 
+  repository:
+    build:
+      context: ./repository
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - repository/.env
+    depends_on:
+      postgres:
+        condition: service_started
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
@@ -29,7 +41,7 @@ services:
     env_file:
       - collector/.env
     depends_on:
-      postgres:
+      repository:
         condition: service_started
       rabbitmq:
         condition: service_healthy

@@ -22,7 +22,6 @@ class WinePrice(BaseModel):
     week_number = IntegerField()
 
     description = CharField()
-    # unit = CharField()
 
     price_raw = CharField()
     price_value = FloatField(null=True)
