@@ -46,5 +46,17 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  wine-processor:
+    build:
+      context: ./processor
+      dockerfile: Dockerfile
+    env_file:
+      - processor/.env
+    depends_on:
+      repository:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   agri_pgdata:

@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel as PydanticBaseModel
-from models import WinePrice
+from models import WinePrice, WineMonthlyAveragePrice
 from db import init_db, db
 
 @asynccontextmanager
@@ -12,7 +12,7 @@ async def lifespan(app: FastAPI):
     retries = 5
     while retries > 0:
         try:
-            init_db([WinePrice])
+            init_db([WinePrice, WineMonthlyAveragePrice])
             break
         except Exception as e:
             logging.error(f"DB connection failed: {e}. Retrying...")
@@ -39,6 +39,16 @@ class WinePriceCreate(PydanticBaseModel):
 
 class WinePriceRead(WinePriceCreate):
     id: int
+
+    class Config:
+        from_attributes = True
+
+class WineMonthlyAverage(PydanticBaseModel):
+    member_state_code: str
+    description: str
+    year: int
+    month: int
+    avg_price_value: float
 
     class Config:
         from_attributes = True
@@ -88,10 +98,36 @@ def create_prices_batch(prices: List[WinePriceCreate]):
                 inserted_count += 1
     return {"inserted": inserted_count}
 
-@app.get("/prices", response_model=List[WinePriceRead])
-def list_prices(limit: int = 100, offset: int = 0):
-    prices = WinePrice.select().offset(offset).limit(limit)
-    return list(prices)
+@app.get("/prices")
+def get_prices_for_processing():
+    """Fetch raw price data for the processor service."""
+    query = WinePrice.select(
+        WinePrice.member_state_code,
+        WinePrice.description,
+        WinePrice.year,
+        WinePrice.month,
+        WinePrice.day,
+        WinePrice.price_value
+    )
+    return list(query.dicts())
+
+@app.post("/prices/averages/batch")
+def save_monthly_averages_batch(averages: List[WineMonthlyAverage]):
+    count = 0
+    with db.atomic():
+        for avg in averages:
+            obj, created = WineMonthlyAveragePrice.get_or_create(
+                member_state_code=avg.member_state_code,
+                description=avg.description,
+                year=avg.year,
+                month=avg.month,
+                defaults={"avg_price_value": avg.avg_price_value}
+            )
+            if not created:
+                obj.avg_price_value = avg.avg_price_value
+                obj.save()
+            count += 1
+    return {"inserted": count}
 
 if __name__ == "__main__":
     import uvicorn

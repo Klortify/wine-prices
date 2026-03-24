@@ -12,6 +12,19 @@ class BaseModel(Model):
         database = db
 
 
+class WineMonthlyAveragePrice(BaseModel):
+    member_state_code = CharField(index=True)
+    description = CharField()
+    year = IntegerField()
+    month = IntegerField()
+    avg_price_value = FloatField()
+
+    class Meta:
+        indexes = (
+            (("description", "year", "month"), True),
+        )
+
+
 class WinePrice(BaseModel):
     member_state_code = CharField()
     member_state_name = CharField()
