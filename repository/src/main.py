@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel as PydanticBaseModel
 from models import WinePrice, WineMonthlyAveragePrice
 from db import init_db, db
@@ -26,6 +27,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Wine Repository Service", lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class WinePriceCreate(PydanticBaseModel):
     member_state_code: str
     member_state_name: str
@@ -45,6 +54,7 @@ class WinePriceRead(WinePriceCreate):
 
 class WineMonthlyAverage(PydanticBaseModel):
     member_state_code: str
+    member_state_name: str
     description: str
     year: int
     month: int
@@ -103,11 +113,22 @@ def get_prices_for_processing():
     """Fetch raw price data for the processor service."""
     query = WinePrice.select(
         WinePrice.member_state_code,
+        WinePrice.member_state_name,
         WinePrice.description,
         WinePrice.year,
         WinePrice.month,
         WinePrice.day,
         WinePrice.price_value
+    )
+    return list(query.dicts())
+
+@app.get("/prices/averages", response_model=List[WineMonthlyAverage])
+def get_monthly_averages():
+    """Fetch all monthly averages."""
+    query = WineMonthlyAveragePrice.select().order_by(
+        WineMonthlyAveragePrice.year.desc(),
+        WineMonthlyAveragePrice.month.desc(),
+        WineMonthlyAveragePrice.member_state_code
     )
     return list(query.dicts())
 
@@ -121,9 +142,10 @@ def save_monthly_averages_batch(averages: List[WineMonthlyAverage]):
                 description=avg.description,
                 year=avg.year,
                 month=avg.month,
-                defaults={"avg_price_value": avg.avg_price_value}
+                avg_price_value=avg.avg_price_value
             )
             if not created:
+                obj.member_state_name = avg.member_state_name
                 obj.avg_price_value = avg.avg_price_value
                 obj.save()
             count += 1

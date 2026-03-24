@@ -14,6 +14,7 @@ class BaseModel(Model):
 
 class WineMonthlyAveragePrice(BaseModel):
     member_state_code = CharField(index=True)
+    member_state_name = CharField()
     description = CharField()
     year = IntegerField()
     month = IntegerField()
@@ -21,7 +22,7 @@ class WineMonthlyAveragePrice(BaseModel):
 
     class Meta:
         indexes = (
-            (("description", "year", "month"), True),
+            (("member_state_code", "description", "year", "month"), True),
         )
 
 

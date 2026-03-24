@@ -17,7 +17,7 @@ def calculate_monthly_averages_by_wine(raw_prices: List[Dict]) -> List[Dict]:
 
     # Calculate average
     # Group by description, year, month and calculate mean of price_value
-    averages_df = df.groupby(['member_state_code', 'description', 'year', 'month'])['price_value'].mean().reset_index()
+    averages_df = df.groupby(['member_state_code', 'member_state_name', 'description', 'year', 'month'])['price_value'].mean().reset_index()
     
     # Rename price_value to avg_price_value
     averages_df = averages_df.rename(columns={'price_value': 'avg_price_value'})
