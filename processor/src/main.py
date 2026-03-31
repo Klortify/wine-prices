@@ -58,8 +58,8 @@ def main():
             )
             break
         except pika.exceptions.AMQPConnectionError:
-            print(f"RabbitMQ not ready, retrying in {delay_attempt}s (attempt {attempt + 1}/{max_retries})")
             delay_attempt = retry_base_delay * attempt
+            print(f"RabbitMQ not ready, retrying in {delay_attempt}s (attempt {attempt + 1}/{max_retries})")
             time.sleep(delay_attempt)
 
     if not connection:
